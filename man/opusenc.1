@@ -317,13 +317,17 @@ Ignore the data length in Wave headers.
 The length will always be ignored when it is implausible (very small or very
 large), but some stdin usage may still need this option to avoid truncation.
 .TP
-.BR --channels " " ambix | discrete
+.BR --channels " " ambix | obj | discrete
 Override the format of the input channels.
 .IP
 "ambix" indicates that the input is ambisonics using ACN channel
 ordering with SN3D normalization. All channels in a full ambisonics order must
 be included. A pair of non-diegetic stereo channels can be optionally placed
 after the ambisonics channels.
+.IP
+"obj" indicates that the input is audio objects as discrete channels that
+are coded jointly. Any audio object metadata such as positional information
+is currently not utilized by Opus.
 .IP
 "discrete" indicates that the input channels are independent discrete channels
 with no assigned meaning or speaker position.

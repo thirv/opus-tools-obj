@@ -176,7 +176,7 @@ static void usage(void)
   printf(" --raw-chan n       Set number of channels for raw input (default: 2)\n");
   printf(" --raw-endianness n 1 for big endian, 0 for little (default: 0)\n");
   printf(" --ignorelength     Ignore the data length in Wave headers\n");
-  printf(" --channels fmt     Override the format of the input channels (ambix, discrete)\n");
+  printf(" --channels fmt     Override the format of the input channels (ambix, obj, discrete)\n");
   printf("\nDiagnostic options:\n");
   printf(" --serial n         Force use of a specific stream serial number\n");
   printf(" --save-range file  Save check values for every frame to a file\n");
@@ -374,6 +374,8 @@ static const char *channels_format_name(int channels_format, int channels)
     }
   } else if (channels_format == CHANNELS_FORMAT_AMBIX) {
     return "ambix";
+  } else if (channels_format == CHANNELS_FORMAT_OBJ) {
+    return "obj";
   }
   return "discrete";
 }
@@ -662,9 +664,11 @@ int main(int argc, char **argv)
             inopt.channels_format=CHANNELS_FORMAT_AMBIX;
           } else if (strcmp(optarg, "discrete")==0) {
             inopt.channels_format=CHANNELS_FORMAT_DISCRETE;
+          } else if (strcmp(optarg, "obj")==0) {
+            inopt.channels_format = CHANNELS_FORMAT_OBJ;
           } else {
             fatal("Invalid input format: %s\n"
-              "--channels only supports 'ambix' or 'discrete'\n",
+              "--channels only supports 'ambix', 'discrete' or 'obj'\n",
               optarg);
           }
         } else if (strcmp(optname, "serial")==0) {
@@ -907,6 +911,12 @@ int main(int argc, char **argv)
     }
   } else if (inopt.channels_format==CHANNELS_FORMAT_AMBIX) {
     validate_ambisonics_channel_count(inopt.channels);
+  } else if (inopt.channels_format == CHANNELS_FORMAT_OBJ) {
+    if (inopt.channels < 1 || inopt.channels>64) fatal("Error: the number of channels must not be <1 or >64.\n");
+    if (downmix > 0) {
+      if (!quiet) fprintf(stderr, "Notice: downmixing not defined for audio object input, skipping downmix.\n");
+      downmix = 0;
+    }
   }
 
   orig_channels = inopt.channels;
@@ -929,6 +939,8 @@ int main(int argc, char **argv)
     mapping_family=(chan>=4&&chan<=18)?3:2;
   } else if (inopt.channels_format==CHANNELS_FORMAT_DISCRETE) {
     mapping_family=255;
+  } else if (inopt.channels_format == CHANNELS_FORMAT_OBJ) {
+    mapping_family=252;
   } else {
     mapping_family=chan>8?255:chan>2;
   }
