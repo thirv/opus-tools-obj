@@ -118,7 +118,7 @@
 #define CLAMPI(_a,_b,_c) (MAXI(_a,MINI(_b,_c)))
 
 /* 120ms at 48000 */
-#define MAX_FRAME_SIZE (960*6)
+#define MAX_FRAME_SIZE (960*32)  // should 32 be OPUS_CHANNEL_COUNT_MAX instead?
 
 #ifdef HAVE_LIBSNDIO
 struct sio_hdl *hdl;
@@ -503,8 +503,8 @@ opus_int64 audio_write(float *pcm, int channels, int frame_size, FILE *fout,
    short *out;
    float *buf;
    float *output;
-   out=alloca(sizeof(short)*MAX_FRAME_SIZE*channels);
-   buf=alloca(sizeof(float)*MAX_FRAME_SIZE*channels);
+   out=malloc(sizeof(short)*MAX_FRAME_SIZE*channels);
+   buf=malloc(sizeof(float)*MAX_FRAME_SIZE*channels);
    maxout=((link_read/48000)*rate + (link_read%48000)*rate/48000) - link_out;
    maxout=maxout<0?0:maxout;
    do {
@@ -570,6 +570,8 @@ opus_int64 audio_write(float *pcm, int channels, int frame_size, FILE *fout,
        maxout-=ret;
      }
    } while (frame_size>0 && maxout>0);
+   free(out);
+   free(buf):
    return sampout;
 }
 
@@ -672,7 +674,7 @@ static void drain_resampler(FILE *fout, int file_output,
 int main(int argc, char **argv)
 {
    unsigned char channel_map[OPUS_CHANNEL_COUNT_MAX];
-   float clipmem[8]={0};
+   float clipmem[OPUS_CHANNEL_COUNT_MAX]={0};
    int c;
    int option_index = 0;
    int exit_code = 0;
@@ -707,7 +709,7 @@ int main(int argc, char **argv)
       {"save-range", required_argument, NULL, 0},
       {0, 0, 0, 0}
    };
-   opus_int64 audio_size=0;
+   opus_int64 volatile audio_size=0;
    opus_int64 last_coded_seconds=-1;
    float loss_percent=-1;
    float manual_gain=0;
